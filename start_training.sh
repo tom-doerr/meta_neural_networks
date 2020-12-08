@@ -11,6 +11,5 @@ then
 fi
 
 docker_run " \
-    cd /mounted/pytorch-cifar/; \
     python3 main.py
 "
