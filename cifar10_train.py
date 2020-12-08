@@ -2,7 +2,7 @@ import os
 import torch
 from argparse import ArgumentParser
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import LearningRateLogger
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from cifar10_module import CIFAR10_Module
 
@@ -19,10 +19,10 @@ def main(hparams):
     classifier = CIFAR10_Module(hparams)
     
     # Trainer
-    lr_logger = LearningRateLogger()
+    lr_logger = LearningRateMonitor()
     logger = TensorBoardLogger("logs", name=hparams.classifier)
     trainer = Trainer(callbacks=[lr_logger], gpus=hparams.gpus, max_epochs=hparams.max_epochs,
-                      deterministic=True, early_stop_callback=False, logger=logger)
+                      deterministic=True, logger=logger)
     trainer.fit(classifier)
 
     # Load best checkpoint
