@@ -76,3 +76,19 @@ Then go to
 - torchvision = 0.6.0
 - tensorboard = 2.2.1
 - pytorch-lightning = 0.7.6
+
+## Setup
+
+```
+pip3 install -r requirements.txt
+python3 download_dataset.py
+python3 cifar10_download.py
+
+# Run tensorboard in background if needed
+./run_tensorboard.sh &
+# Train
+./train_gpu.sh
+
+# Test
+./test_gpu.sh
+```

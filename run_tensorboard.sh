@@ -1,2 +1,2 @@
 #!/bin/bash
-tensorboard --logdir=. --port=8099
+tensorboard --logdir=logs --port=8099
