@@ -26,20 +26,26 @@ def main(hparams):
         transforms.Normalize(mean, std),
     ])
 
-    train_dataset = CIFAR10(hparams.data_dir, train=True, download=False, transform=transform_dataset)
-    train_dataloader = DataLoader(train_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
-    print('Evaluate for train dataset')
-    labels = evaluate_for_dataset(module.model, train_dataloader)
-    os.makedirs('labels', exist_ok=True)
-    file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'train'))
-    save_labels(file_path, labels)
+    if hparams.all:
+        hparams.train = True
+        hparams.test = True
 
-    test_dataset = CIFAR10(hparams.data_dir, train=False, download=False, transform=transform_dataset)
-    test_dataloader = DataLoader(test_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
-    print('Evaluate for test dataset')
-    labels = evaluate_for_dataset(module.model, test_dataset)
-    file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'test'))
-    save_labels(file_path, labels)
+    if hparams.train:
+        train_dataset = CIFAR10(hparams.data_dir, train=True, download=False, transform=transform_dataset)
+        train_dataloader = DataLoader(train_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
+        print('Evaluate for train dataset')
+        labels = evaluate_for_dataset(module.model, train_dataloader)
+        os.makedirs('labels', exist_ok=True)
+        file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'train'))
+        save_labels(file_path, labels)
+
+    if hparams.test:
+        test_dataset = CIFAR10(hparams.data_dir, train=False, download=False, transform=transform_dataset)
+        test_dataloader = DataLoader(test_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
+        print('Evaluate for test dataset')
+        labels = evaluate_for_dataset(module.model, test_dataloader)
+        file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'test'))
+        save_labels(file_path, labels)
 
 def evaluate_for_dataset(model, dataloader):
     result = []
@@ -68,5 +74,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--learning_rate', type=float, default=1e-2)
     parser.add_argument('--weight_decay', type=float, default=1e-2)
+    parser.add_argument('--all', action='store_true')
+    parser.add_argument('--train', action='store_true')
+    parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
     main(args)
