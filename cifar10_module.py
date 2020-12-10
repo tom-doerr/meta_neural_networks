@@ -1,3 +1,4 @@
+from argparse import Namespace
 import torch
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
@@ -37,6 +38,8 @@ def get_classifier(classifier, pretrained):
         
 class CIFAR10_Module(pl.LightningModule):
     def __init__(self, hparams, pretrained=False):
+        if type(hparams) is dict:
+            hparams = Namespace(**hparams)
         super().__init__()
         self.hparams = hparams
         self.criterion = torch.nn.CrossEntropyLoss()
