@@ -94,7 +94,7 @@ class CIFAR10_Module(pl.LightningModule):
                                               transforms.RandomHorizontalFlip(),
                                               transforms.ToTensor(),
                                               transforms.Normalize(self.mean, self.std)])
-        dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train)
+        dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
         dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
