@@ -18,6 +18,8 @@ def main(hparams):
         hparams.gpus = None
 
     module = CIFAR10_Module(hparams, pretrained=True)
+    if not hparams.no_gpu:
+        model = module.model.cuda()
 
     mean = [0.4914, 0.4822, 0.4465]
     std = [0.2023, 0.1994, 0.2010]
@@ -34,7 +36,7 @@ def main(hparams):
         train_dataset = CIFAR10(hparams.data_dir, train=True, download=False, transform=transform_dataset)
         train_dataloader = DataLoader(train_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
         print('Evaluate for train dataset')
-        labels = evaluate_for_dataset(module.model, train_dataloader)
+        labels = evaluate_for_dataset(module.model, train_dataloader, gpu=not hparams.no_gpu)
         os.makedirs('labels', exist_ok=True)
         file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'train'))
         save_labels(file_path, labels)
@@ -43,11 +45,11 @@ def main(hparams):
         test_dataset = CIFAR10(hparams.data_dir, train=False, download=False, transform=transform_dataset)
         test_dataloader = DataLoader(test_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
         print('Evaluate for test dataset')
-        labels = evaluate_for_dataset(module.model, test_dataloader)
+        labels = evaluate_for_dataset(module.model, test_dataloader, gpu=not hparams.no_gpu)
         file_path = os.path.join('labels', '{}_{}.npy'.format(hparams.classifier, 'test'))
         save_labels(file_path, labels)
 
-def evaluate_for_dataset(model, dataloader):
+def evaluate_for_dataset(model, dataloader, gpu=True):
     result = []
     total = len(dataloader)
     with torch.no_grad():
@@ -56,6 +58,8 @@ def evaluate_for_dataset(model, dataloader):
             if i == 0 or i % 10 == 9 or i == total - 1:
                 print('Batch {:5}/{}'.format(i+1, total))
             images, targets = batch
+            if gpu:
+                images = images.cuda()
             predictions = model(images)
             result += predictions.argmax(axis=1).tolist()
     return result
