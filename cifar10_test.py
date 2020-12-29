@@ -13,7 +13,7 @@ def main(hparams):
     else:
         hparams.gpus = None
 
-    model = CIFAR10_Module(hparams, pretrained=True)
+    model = CIFAR10_Module(hparams, pretrained=True, target=hparams.target)
     trainer = Trainer(gpus=hparams.gpus, default_root_dir=os.path.join(os.getcwd(), 'test_temp'))
     trainer.test(model)
     shutil.rmtree(os.path.join(os.getcwd(), 'test_temp'))
@@ -22,6 +22,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--classifier', type=str, default='resnet18')
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
+    parser.add_argument('--labels_dir', type=str, default='labels')
+    parser.add_argument('--target', type=int, default=-1)
     parser.add_argument('--no_gpu', action='store_true')
     parser.add_argument('--gpus', default='0,')
     parser.add_argument('--max_epochs', type=int, default=100)

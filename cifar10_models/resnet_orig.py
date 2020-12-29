@@ -77,10 +77,13 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
-def resnet_orig(pretrained=True, device='cpu'):
+def resnet_orig(pretrained=True, target=-1, device='cpu'):
     net = ResNet(BasicBlock, [3, 3, 3])
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/resnet_orig.pt', map_location=device)
+        if target >= 0:
+            state_dict = torch.load('{}/state_dicts/resnet_orig/{}.pt'.format(script_dir, target), map_location=device)
+        else:
+            state_dict = torch.load(script_dir + '/state_dicts/resnet_orig.pt', map_location=device)
         net.load_state_dict(state_dict)
     return net
