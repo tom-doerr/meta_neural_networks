@@ -1,3 +1,4 @@
+import os
 from argparse import Namespace
 import torch
 import pytorch_lightning as pl
@@ -5,6 +6,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
 from torch.utils.data import DataLoader
 from cifar10_models import *
+from cifar10_dataset import CIFAR10Class
 
 def get_classifier(classifier, pretrained):
     if classifier == 'vgg11_bn':
@@ -97,14 +99,22 @@ class CIFAR10_Module(pl.LightningModule):
                                               transforms.RandomHorizontalFlip(),
                                               transforms.ToTensor(),
                                               transforms.Normalize(self.mean, self.std)])
-        dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
+        if self.hparams.target >= 0:
+            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_train, download=True, labels_file=labels_file, target=self.hparams.target)
+        else:
+            dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
         dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
     def val_dataloader(self):
         transform_val = transforms.Compose([transforms.ToTensor(),
                                             transforms.Normalize(self.mean, self.std)])
-        dataset = CIFAR10(root=self.hparams.data_dir, train=False, transform=transform_val)
+        if self.hparams.target >= 0:
+            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=False, transform=transform_val, labels_file=labels_file, target=self.hparams.target)
+        else:
+            dataset = CIFAR10(root=self.hparams.data_dir, train=False, transform=transform_val)
         dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, pin_memory=True)
         return dataloader
     

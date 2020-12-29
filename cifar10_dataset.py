@@ -5,8 +5,9 @@ from argparse import ArgumentParser
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
+from PIL import Image
 from torchvision.datasets import CIFAR10
-from cifar10_module import CIFAR10_Module
+# from cifar10_module import CIFAR10_Module
 
 
 class CIFAR10Class(CIFAR10):
@@ -23,11 +24,22 @@ class CIFAR10Class(CIFAR10):
         # return super().__len__()
 
     def __getitem__(self, idx):
-        return self.target_data[idx], self.target_labels[idx]
+        img, target = self.target_data[idx], self.target_labels[idx]
+
+        img = Image.fromarray(img)
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target
         # return super().__getitem__(idx)
 
 
 def main(hparams):
+    return  # do nothing
 
     seed_everything(0)
 

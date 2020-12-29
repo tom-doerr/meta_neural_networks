@@ -30,7 +30,12 @@ def main(hparams):
     classifier = CIFAR10_Module.load_from_checkpoint(os.path.join(checkpoint_path, os.listdir(checkpoint_path)[0]))
     
     # Save weights from checkpoint
-    statedict_path = os.path.join(os.getcwd(), 'cifar10_models', 'state_dicts', hparams.classifier + '.pt')
+    if hparams.target >= 0:
+        statedict_path = [os.getcwd(), 'cifar10_models', 'state_dicts', hparams.classifier, str(hparams.target) + '.pt']
+        os.makedirs(os.path.join(*statedict_path[:-1]), exist_ok=True)
+    else:
+        statedict_path = [os.getcwd(), 'cifar10_models', 'state_dicts', hparams.classifier + '.pt']
+    statedict_path = os.path.join(*statedict_path)
     torch.save(classifier.model.state_dict(), statedict_path)
     
     # Test model
@@ -40,6 +45,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--classifier', type=str, default='resnet18')
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
+    parser.add_argument('--labels_dir', type=str, default='labels')
+    parser.add_argument('--target', type=int, default=-1)
     parser.add_argument('--gpus', default='0,') # use None to train on CPU
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--max_epochs', type=int, default=100)
