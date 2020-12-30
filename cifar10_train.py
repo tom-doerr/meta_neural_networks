@@ -16,7 +16,7 @@ def main(hparams):
             torch.cuda.set_device(int(hparams.gpus[0]))
     
     # Model
-    classifier = CIFAR10_Module(hparams)
+    classifier = CIFAR10_Module(hparams, pretrained=hparams.pretrained)  # do not pass target to get pretrained on full dataset # TODO: but we need to pass target here to generate the right module
     
     # Trainer
     lr_logger = LearningRateMonitor()
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
     parser.add_argument('--labels_dir', type=str, default='labels')
     parser.add_argument('--target', type=int, default=-1)
+    parser.add_argument('--pretrained', action='store_true')
     parser.add_argument('--gpus', default='0,') # use None to train on CPU
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--max_epochs', type=int, default=100)

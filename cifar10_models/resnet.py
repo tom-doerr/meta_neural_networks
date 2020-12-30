@@ -197,11 +197,14 @@ class ResNet(nn.Module):
         return x
 
 
-def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
+def _resnet(arch, block, layers, pretrained, progress, device, target=-1, **kwargs):
     model = ResNet(block, layers, **kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/'+arch+'.pt', map_location=device)
+        if target >= 0:
+            state_dict = torch.load('{}/state_dicts/{}/{}.pt'.format(script_dir, arch, target), map_location=device)
+        else:
+            state_dict = torch.load(script_dir + '/state_dicts/'+arch+'.pt', map_location=device)
         model.load_state_dict(state_dict)
     return model
 

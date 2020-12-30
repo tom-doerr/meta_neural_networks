@@ -1,5 +1,6 @@
 import os
 from argparse import Namespace
+import numpy as np
 import torch
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
@@ -8,46 +9,56 @@ from torch.utils.data import DataLoader
 from cifar10_models import *
 from cifar10_dataset import CIFAR10Class
 
-def get_classifier(classifier, pretrained):
+def get_classifier(classifier, pretrained, target=-1):
     if classifier == 'vgg11_bn':
-        return vgg11_bn(pretrained=pretrained)
+        return vgg11_bn(pretrained=pretrained, target=target)
     elif classifier == 'vgg13_bn':
-        return vgg13_bn(pretrained=pretrained)
+        return vgg13_bn(pretrained=pretrained, target=target)
     elif classifier == 'vgg16_bn':
-        return vgg16_bn(pretrained=pretrained)
+        return vgg16_bn(pretrained=pretrained, target=target)
     elif classifier == 'vgg19_bn':
-        return vgg19_bn(pretrained=pretrained)
+        return vgg19_bn(pretrained=pretrained, target=target)
     elif classifier == 'resnet18':
-        return resnet18(pretrained=pretrained)
+        return resnet18(pretrained=pretrained, target=target)
     elif classifier == 'resnet34':
-        return resnet34(pretrained=pretrained)
+        return resnet34(pretrained=pretrained, target=target)
     elif classifier == 'resnet50':
-        return resnet50(pretrained=pretrained)
+        return resnet50(pretrained=pretrained, target=target)
     elif classifier == 'densenet121':
-        return densenet121(pretrained=pretrained)
+        return densenet121(pretrained=pretrained, target=target)
     elif classifier == 'densenet161':
-        return densenet161(pretrained=pretrained)
+        return densenet161(pretrained=pretrained, target=target)
     elif classifier == 'densenet169':
-        return densenet169(pretrained=pretrained)
+        return densenet169(pretrained=pretrained, target=target)
     elif classifier == 'mobilenet_v2':
-        return mobilenet_v2(pretrained=pretrained)
+        return mobilenet_v2(pretrained=pretrained, target=target)
     elif classifier == 'googlenet':
-        return googlenet(pretrained=pretrained)
+        return googlenet(pretrained=pretrained, target=target)
     elif classifier == 'inception_v3':
-        return inception_v3(pretrained=pretrained)
+        return inception_v3(pretrained=pretrained, target=target)
     else:
         raise NameError('Please enter a valid classifier')
         
 class CIFAR10_Module(pl.LightningModule):
-    def __init__(self, hparams, pretrained=False):
+    def __init__(self, hparams, pretrained=False, target=-1):
         if type(hparams) is dict:
             hparams = Namespace(**hparams)
         super().__init__()
         self.hparams = hparams
-        self.criterion = torch.nn.CrossEntropyLoss()
+
+        if target >= 0:
+            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, target=self.hparams.target)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
+            self.classes_count = dataset.classes_count
+            weight_array = np.array(1 / self.classes_count, dtype=np.float32)
+            self.cross_entropy_weight = torch.tensor(weight_array)
+            self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
+        else:
+            self.criterion = torch.nn.CrossEntropyLoss()
+
         self.mean = [0.4914, 0.4822, 0.4465]
         self.std = [0.2023, 0.1994, 0.2010]
-        self.model = get_classifier(hparams.classifier, pretrained)
+        self.model = get_classifier(hparams.classifier, pretrained, target=target)
         self.train_size = len(self.train_dataloader().dataset)
         self.val_size = len(self.val_dataloader().dataset)
         

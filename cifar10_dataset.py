@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 import numpy as np
 import torch
 from argparse import ArgumentParser
@@ -18,6 +19,11 @@ class CIFAR10Class(CIFAR10):
         self.data_indexes = np.where(self.labels == target)[0]
         self.target_data = self.data[self.data_indexes]
         self.target_labels = np.array(self.targets)[self.data_indexes]
+
+        unique, counts = np.unique(self.target_labels, return_counts=True)
+        class_count = defaultdict(int, zip(unique, counts))
+        total_classes = 10
+        self.classes_count = np.array([class_count[i] for i in range(total_classes)])
 
     def __len__(self):
         return self.data_indexes.shape[0]
