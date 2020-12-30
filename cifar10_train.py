@@ -16,7 +16,7 @@ def main(hparams):
             torch.cuda.set_device(int(hparams.gpus[0]))
     
     # Model
-    classifier = CIFAR10_Module(hparams, pretrained=hparams.pretrained)  # do not pass target to get pretrained on full dataset
+    classifier = CIFAR10_Module(hparams, pretrained=hparams.pretrained)  # do not pass target to get pretrained on full dataset # TODO: but we need to pass target here to generate the right module
     
     # Trainer
     lr_logger = LearningRateMonitor()

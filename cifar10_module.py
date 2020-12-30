@@ -1,5 +1,6 @@
 import os
 from argparse import Namespace
+import numpy as np
 import torch
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
@@ -44,7 +45,17 @@ class CIFAR10_Module(pl.LightningModule):
             hparams = Namespace(**hparams)
         super().__init__()
         self.hparams = hparams
-        self.criterion = torch.nn.CrossEntropyLoss()
+
+        if target >= 0:
+            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, target=self.hparams.target)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
+            self.classes_count = dataset.classes_count
+            weight_array = np.array(1 / self.classes_count, dtype=np.float32)
+            self.cross_entropy_weight = torch.tensor(weight_array)
+            self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
+        else:
+            self.criterion = torch.nn.CrossEntropyLoss()
+
         self.mean = [0.4914, 0.4822, 0.4465]
         self.std = [0.2023, 0.1994, 0.2010]
         self.model = get_classifier(hparams.classifier, pretrained, target=target)
