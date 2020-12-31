@@ -3,7 +3,6 @@
 set -x 
 source utils.sh
 
-docker build docker -t meta_nn
 
 #if [[ ! -d pytorch-cifar/ ]]
 #then
