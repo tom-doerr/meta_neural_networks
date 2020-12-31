@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ALL=`ls -1 cifar10_models/state_dicts | ggrep -Po ".+(?=\.pt)"`
+ALL=`ls -1 cifar10_models/state_dicts | ggrep -Po ".+(?=\.pt$)"`
 echo -e "model    \ttrain acc\ttest acc\ttotal acc"
 echo "---------------------------------------------------------"
 for i in $ALL; do
