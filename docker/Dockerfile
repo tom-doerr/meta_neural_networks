@@ -15,4 +15,4 @@ pytorch-lightning \
 torch \
 torchvision
 
-
+run ln -s /mounted/data /data
