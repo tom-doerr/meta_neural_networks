@@ -40,13 +40,13 @@ def get_classifier(classifier, pretrained, target=-1):
         raise NameError('Please enter a valid classifier')
         
 class CIFAR10_Module(pl.LightningModule):
-    def __init__(self, hparams, pretrained=False, target=-1):
+    def __init__(self, hparams, pretrained=False):
         if type(hparams) is dict:
             hparams = Namespace(**hparams)
         super().__init__()
         self.hparams = hparams
 
-        if target >= 0:
+        if self.hparams.target >= 0:
             labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
             dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, target=self.hparams.target)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
             self.classes_count = dataset.classes_count
@@ -58,7 +58,7 @@ class CIFAR10_Module(pl.LightningModule):
 
         self.mean = [0.4914, 0.4822, 0.4465]
         self.std = [0.2023, 0.1994, 0.2010]
-        self.model = get_classifier(hparams.classifier, pretrained, target=target)
+        self.model = get_classifier(hparams.classifier, pretrained, target=self.hparams.target)
         self.train_size = len(self.train_dataloader().dataset)
         self.val_size = len(self.val_dataloader().dataset)
         

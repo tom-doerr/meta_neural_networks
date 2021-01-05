@@ -16,7 +16,7 @@ def main(hparams):
             torch.cuda.set_device(int(hparams.gpus[0]))
     
     # Model
-    classifier = CIFAR10_Module(hparams, pretrained=hparams.pretrained, target=hparams.target)  # pass target to create the right module with loss function
+    classifier = CIFAR10_Module(hparams, pretrained=hparams.pretrained)  # target is passed in hparams to create the right module with loss function
     # IMPORTANT! Be sure to initialize target models with full dataset models on your own, if pretrained=True
     
     # Trainer
@@ -28,7 +28,7 @@ def main(hparams):
 
     # Load best checkpoint
     checkpoint_path = os.path.join(os.getcwd(), 'logs', hparams.classifier, 'version_' + str(classifier.logger.version),'checkpoints')
-    classifier = CIFAR10_Module.load_from_checkpoint(os.path.join(checkpoint_path, os.listdir(checkpoint_path)[0]), target=hparams.target)
+    classifier = CIFAR10_Module.load_from_checkpoint(os.path.join(checkpoint_path, os.listdir(checkpoint_path)[0]))
     
     # Save weights from checkpoint
     if hparams.target >= 0:
