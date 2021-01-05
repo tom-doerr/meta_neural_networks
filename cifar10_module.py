@@ -51,6 +51,7 @@ class CIFAR10_Module(pl.LightningModule):
             dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, target=self.hparams.target)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
             self.classes_count = dataset.classes_count
             weight_array = np.array(1 / self.classes_count, dtype=np.float32)
+            weight_array[self.hparams.target] *= 9  # score right and wrong predictions the same (consider all classes other than 'target' as wrong)
             self.cross_entropy_weight = torch.tensor(weight_array)
             self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
         else:

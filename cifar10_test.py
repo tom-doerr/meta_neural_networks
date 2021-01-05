@@ -15,7 +15,7 @@ def main(hparams):
     else:
         hparams.gpus = None
 
-    model = CIFAR10_Module(hparams, pretrained=True, target=hparams.target)
+    model = CIFAR10_Module(hparams, pretrained=True)
     print(model)
     for name, module in model.named_modules():
         print(name)
