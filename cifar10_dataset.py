@@ -48,6 +48,18 @@ class CIFAR10Class(CIFAR10):
         # return super().__getitem__(idx)
 
 
+class ClassLoss(torch.nn.BCEWithLogitsLoss):
+    def __init__(self, *args, target=-1, **kwargs):
+        super(ClassLoss, self).__init__(*args, **kwargs)
+        self.target = torch.tensor(target, dtype=torch.float)
+        self.target_tensor = torch.zeros(10)
+        self.target_tensor[target] = 1
+
+    def forward(self, input, target):
+        target = torch.min(torch.abs(self.target - target), 1)  # 0 - coincide, 1 - different
+        pass
+
+
 def main(hparams):
     return  # do nothing
 
