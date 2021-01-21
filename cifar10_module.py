@@ -65,8 +65,10 @@ class CIFAR10_Module(pl.LightningModule):
         
     def forward(self, batch):
         images, labels = batch
+        # self.model.eval()  # Debugging: this ensures that BatchNorm2d is NOT updated
         predictions = self.model(images)
         loss = self.criterion(predictions, labels)
+        # loss *= 0  # Debugging: this ensures that parameters are NOT updated
         accuracy = torch.sum(torch.max(predictions, 1)[1] == labels.data).float() / batch[0].size(0)
         return loss, accuracy
     
