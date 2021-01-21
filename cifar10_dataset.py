@@ -24,6 +24,10 @@ class CIFAR10Class(CIFAR10):
         class_count = defaultdict(int, zip(unique, counts))
         total_classes = 10
         self.classes_count = np.array([class_count[i] for i in range(total_classes)])
+        num_dims = len(self.target_data.shape)
+        axis = tuple(range(num_dims - 1))
+        self.mean = self.target_data.mean(axis=axis) / 255  # all but last dimension
+        self.std = self.target_data.std(axis=axis) / 255  # all but last dimension
 
     def __len__(self):
         return self.data_indexes.shape[0]

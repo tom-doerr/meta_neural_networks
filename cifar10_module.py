@@ -53,12 +53,16 @@ class CIFAR10_Module(pl.LightningModule):
             weight_array = np.array(1 / self.classes_count, dtype=np.float32)
             weight_array[self.hparams.target] *= 9  # score right and wrong predictions the same (consider all classes other than 'target' as wrong)
             self.cross_entropy_weight = torch.tensor(weight_array)
+
+            self.mean = dataset.mean
+            self.std = dataset.std
             self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
         else:
             self.criterion = torch.nn.CrossEntropyLoss()
 
-        self.mean = [0.4914, 0.4822, 0.4465]
-        self.std = [0.2023, 0.1994, 0.2010]
+            self.mean = [0.4914, 0.4822, 0.4465]
+            self.std = [0.2023, 0.1994, 0.2010]
+
         self.model = get_classifier(hparams.classifier, pretrained, target=self.hparams.target)
         self.train_size = len(self.train_dataloader().dataset)
         self.val_size = len(self.val_dataloader().dataset)
