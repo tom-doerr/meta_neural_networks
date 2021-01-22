@@ -8,6 +8,7 @@ from torchvision.datasets import CIFAR10
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from cifar10_module import CIFAR10_Module
+import pickle
 
 def main(hparams):
     if not hparams.no_gpu:
@@ -18,9 +19,20 @@ def main(hparams):
     else:
         hparams.gpus = None
 
+    hparams.target = -1  # not sure if setting this is okay, but I got an error when I don't set the target
     module = CIFAR10_Module(hparams, pretrained=True)
+
+
     if not hparams.no_gpu:
         model = module.model.cuda()
+
+    #for name, module in model.named_modules():
+    #    print(name)
+    activation = {}
+    def hook(model, input_, output):
+        activation['output'] = output.detach()
+    model.features[18][1].register_forward_hook(hook)
+
 
     mean = [0.4914, 0.4822, 0.4465]
     std = [0.2023, 0.1994, 0.2010]
@@ -42,22 +54,27 @@ def main(hparams):
         train_dataset = CIFAR10(hparams.data_dir, train=True, download=False, transform=transform_dataset)
         train_dataloader = DataLoader(train_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
         print('Evaluate for train dataset')
-        labels = evaluate_for_dataset(module.model, train_dataloader, probabilities=hparams.probabilities, gpu=not hparams.no_gpu)
+        labels, activations = evaluate_for_dataset(module.model, train_dataloader, probabilities=hparams.probabilities, gpu=not hparams.no_gpu, activation=activation)
         os.makedirs(folder, exist_ok=True)
         file_path = os.path.join(folder, '{}_{}.npy'.format(hparams.classifier, 'train'))
+        file_path_activations = f'activations/{hparams.classifier}_train.pickle'
         save_labels(file_path, labels, probabilities=hparams.probabilities)
+        save_activations(file_path_activations, activations)
 
     if hparams.test:
         test_dataset = CIFAR10(hparams.data_dir, train=False, download=False, transform=transform_dataset)
         test_dataloader = DataLoader(test_dataset, batch_size=hparams.batch_size, num_workers=4, shuffle=False, drop_last=False, pin_memory=True)
         print('Evaluate for test dataset')
-        labels = evaluate_for_dataset(module.model, test_dataloader, probabilities=hparams.probabilities, gpu=not hparams.no_gpu)
+        labels, activations = evaluate_for_dataset(module.model, test_dataloader, probabilities=hparams.probabilities, gpu=not hparams.no_gpu, activation=activation)
         file_path = os.path.join(folder, '{}_{}.npy'.format(hparams.classifier, 'test'))
         save_labels(file_path, labels, probabilities=hparams.probabilities)
 
-def evaluate_for_dataset(model, dataloader, probabilities=False, gpu=True):
+    print(activation)
+
+def evaluate_for_dataset(model, dataloader, probabilities=False, gpu=True, activation=None):
     result = []
     total = len(dataloader)
+    activations = []
     with torch.no_grad():
         for i, batch in enumerate(dataloader):
             # print 1, 10, 20, ..., last
@@ -72,7 +89,10 @@ def evaluate_for_dataset(model, dataloader, probabilities=False, gpu=True):
             else:
                 current_result = predictions.argmax(axis=1).tolist()
             result += current_result
-    return result
+            if activation:
+                print(activation)
+                activations.append(activation['output'])
+    return result, activations
 
 def save_labels(file_path, labels, probabilities=False):
     with open(file_path, 'wb') as f:
@@ -80,6 +100,11 @@ def save_labels(file_path, labels, probabilities=False):
             np.save(f, np.array(labels, dtype=np.float32))
         else:
             np.save(f, np.array(labels, dtype=np.int8))
+
+def save_activations(file_path, activations):
+    with open(file_path, 'wb') as f:
+        pickle.dump(activations, f)
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
