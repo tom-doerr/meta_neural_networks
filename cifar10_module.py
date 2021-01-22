@@ -63,6 +63,10 @@ class CIFAR10_Module(pl.LightningModule):
             self.mean = [0.4914, 0.4822, 0.4465]
             self.std = [0.2023, 0.1994, 0.2010]
 
+        if False:  # always use full-dataset mean
+            self.mean = [0.4914, 0.4822, 0.4465]
+            self.std = [0.2023, 0.1994, 0.2010]
+
         self.model = get_classifier(hparams.classifier, pretrained, target=self.hparams.target)
         self.train_size = len(self.train_dataloader().dataset)
         self.val_size = len(self.val_dataloader().dataset)

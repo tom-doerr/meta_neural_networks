@@ -49,10 +49,12 @@ class CIFAR10_Module(pl.LightningModule):
             # print(class_model_batches[i][0].device)
             # print(images.device)
             # print('*' * 50)
-            # breakpoint()
             preds = self.class_models[i](class_model_batches[i][0])
             # p2 = []
-            # for img in class_model_batches[i][0]: p2.append(self.class_models[i](torch.tensor([img]).cuda()))
+            # for img in class_model_batches[i][0]:
+            #     p2.append(self.class_models[i](img.view(1, *img.shape)).cpu().numpy())
+            # p2 = torch.tensor(p2).squeeze()
+            # breakpoint()
             predictions[indexes] = preds
 
         loss = 0
