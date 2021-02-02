@@ -37,3 +37,12 @@ python3 generate_class_labels.py --train --classifier mobilenet_v2
 # Files 
 
 `./test_gpu_classes_print_result.sh`: Print the accuracy of the specialized neural networks.
+
+
+
+# Training
+```
+./clear_classes_weights.sh
+./init_classes_weights.sh
+./train_gpu_classes.sh
+```
