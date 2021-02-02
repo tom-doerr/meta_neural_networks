@@ -13,7 +13,7 @@ RESULTS_FILE_TMP="$RESULTS_FILE"_tmp
 
 rm $RESULTS_FILE
 rm $RESULTS_FILE_TMP
-for threshold in $(seq 0.1 0.01 0.3)
+for threshold in $(seq 0.0 0.001 0.6)
 do
     python3 mnn_test.py --classifier mobilenet_v2 --data_dir dataset --gpus 0 --switch_threshold $threshold | grep 'Accuracy' | tee -a $RESULTS_FILE_TMP
     printf "$threshold, " >> $RESULTS_FILE
