@@ -50,5 +50,11 @@ or just
 ```
 ./train_classes_from_scratch.sh
 ```
+
+
+
+# Testing whole architecture
+```
+./test_mnn.sh
 ```
 ```
