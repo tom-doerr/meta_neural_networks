@@ -57,4 +57,10 @@ or just
 ```
 ./test_mnn.sh
 ```
+
+# Analyze Expert Threshold
+To get the accuracy values for different offsets, run
 ```
+./generate_switch_threshold_accuracy.sh
+```
+This will write the threshold and corrosponding accuracy to `plotting/switch_threshold_accuracy`.
