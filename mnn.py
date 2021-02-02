@@ -11,6 +11,13 @@ from cifar10_models import *
 from cifar10_module import get_classifier, CIFAR10_Module
 from cifar10_dataset import CIFAR10Class
 
+def switch_func(x, total_classes, switch_threshold=0.25, **kwargs):
+    picked_labels = torch.arange(total_classes).view(1, -1).repeat(x.shape[0], 1)
+    picked_labels[x < switch_threshold] = -1  # 0.25 work well
+    return picked_labels  # > 0.1
+def switch_func2(x, total_classes, **kwargs):
+    picked_labels = torch.arange(total_classes).view(1, -1).repeat(x.shape[0], 1)
+    return picked_labels
 
 class CIFAR10_Module(pl.LightningModule):
     def __init__(self, hparams, pretrained=True):
@@ -18,19 +25,12 @@ class CIFAR10_Module(pl.LightningModule):
             hparams = Namespace(**hparams)
         super().__init__()
         self.hparams = hparams
+        self.switch_kwargs = {'switch_threshold': hparams.switch_threshold}
 
         self.mean = [0.4914, 0.4822, 0.4465]
         self.std = [0.2023, 0.1994, 0.2010]
 
         self.switch_model = get_classifier(hparams.classifier, pretrained)
-
-        def switch_func(x):
-            picked_labels = torch.arange(self.total_classes).view(1, -1).repeat(x.shape[0], 1)
-            picked_labels[x < self.hparams.switch_threshold] = -1  # 0.2 work well
-            return picked_labels  # > 0.1
-        def switch_func2(x):
-            picked_labels = torch.arange(self.total_classes).view(1, -1).repeat(x.shape[0], 1)
-            return picked_labels
         self.switch_func = switch_func
 
         self.total_classes = 10
@@ -49,7 +49,7 @@ class CIFAR10_Module(pl.LightningModule):
         initial_predictions = self.switch_model(images)
         predictions = initial_predictions.detach().clone()
         predictions = softmax(predictions)
-        switch_indicies = self.switch_func(predictions)
+        switch_indicies = self.switch_func(predictions, self.total_classes, **self.switch_kwargs)
 
         class_model_batches = []
         for i in range(self.total_classes):
