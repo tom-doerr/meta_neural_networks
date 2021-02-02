@@ -10,15 +10,31 @@ from PIL import Image
 from torchvision.datasets import CIFAR10
 # from cifar10_module import CIFAR10_Module
 
+def switch_func(x, total_classes, switch_threshold=0.25, **kwargs):
+    picked_labels = torch.arange(total_classes).view(1, -1).repeat(x.shape[0], 1)
+    picked_labels[x < switch_threshold] = -1  # 0.25 work well
+    return picked_labels  # > 0.1
 
 class CIFAR10Class(CIFAR10):
-    def __init__(self, *args, labels_file='labels/mobilenet_v2_train.npy', target=-1, **kwargs):
+    def __init__(self, *args, labels_file='labels/mobilenet_v2_train.npy', probabilities_file='probabilities/mobilenet_v2_train.npy', target=-1, use_switch_func=False, switch_kwargs=None, **kwargs):
         super(CIFAR10Class, self).__init__(*args, **kwargs)
-        with open(labels_file, 'rb') as f:
-            self.labels = np.load(f)
-        self.data_indexes = np.where(self.labels == target)[0]
-        self.target_data = self.data[self.data_indexes]
-        self.target_labels = np.array(self.targets)[self.data_indexes]
+        if switch_kwargs is None:
+            switch_kwargs = {}
+        if use_switch_func:
+            with open(probabilities_file, 'rb') as f:
+                self.probabilities = np.load(f)
+            probs = torch.tensor(self.probabilities)
+            switch_indicies = switch_func(probs, probs.shape[1], **switch_kwargs)
+            self.switch_indicies = (switch_indicies - target == 0).sum(dim=1).bool().numpy()
+            self.data_indexes = np.where(self.switch_indicies)[0]
+            self.target_data = self.data[self.data_indexes]
+            self.target_labels = np.array(self.targets)[self.data_indexes]
+        else:
+            with open(labels_file, 'rb') as f:
+                self.labels = np.load(f)
+            self.data_indexes = np.where(self.labels == target)[0]
+            self.target_data = self.data[self.data_indexes]
+            self.target_labels = np.array(self.targets)[self.data_indexes]
 
         unique, counts = np.unique(self.target_labels, return_counts=True)
         class_count = defaultdict(int, zip(unique, counts))

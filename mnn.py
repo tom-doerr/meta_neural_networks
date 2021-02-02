@@ -9,15 +9,8 @@ from torchvision.datasets import CIFAR10
 from torch.utils.data import DataLoader
 from cifar10_models import *
 from cifar10_module import get_classifier, CIFAR10_Module
-from cifar10_dataset import CIFAR10Class
+from cifar10_dataset import CIFAR10Class, switch_func
 
-def switch_func(x, total_classes, switch_threshold=0.25, **kwargs):
-    picked_labels = torch.arange(total_classes).view(1, -1).repeat(x.shape[0], 1)
-    picked_labels[x < switch_threshold] = -1  # 0.25 work well
-    return picked_labels  # > 0.1
-def switch_func2(x, total_classes, **kwargs):
-    picked_labels = torch.arange(total_classes).view(1, -1).repeat(x.shape[0], 1)
-    return picked_labels
 
 class CIFAR10_Module(pl.LightningModule):
     def __init__(self, hparams, pretrained=True):

@@ -49,7 +49,11 @@ class CIFAR10_Module(pl.LightningModule):
 
         if self.hparams.target >= 0:
             labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, target=self.hparams.target)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
+            probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+            self.switch_kwargs = {'switch_threshold': self.hparams.switch_threshold}
+            print(self.switch_kwargs)
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
+            print('len(dataset) =', len(dataset))
             self.classes_count = dataset.classes_count
             weight_array = np.array(1 / self.classes_count, dtype=np.float32)
             weight_array[self.hparams.target] *= 9  # score right and wrong predictions the same (consider all classes other than 'target' as wrong)
@@ -140,7 +144,8 @@ class CIFAR10_Module(pl.LightningModule):
                                               transforms.Normalize(self.mean, self.std)])
         if self.hparams.target >= 0:
             labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_train, download=True, labels_file=labels_file, target=self.hparams.target)
+            probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_train, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
         else:
             dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
         dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
@@ -151,7 +156,8 @@ class CIFAR10_Module(pl.LightningModule):
                                             transforms.Normalize(self.mean, self.std)])
         if self.hparams.target >= 0:
             labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=False, transform=transform_val, labels_file=labels_file, target=self.hparams.target)
+            probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=False, transform=transform_val, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
         else:
             dataset = CIFAR10(root=self.hparams.data_dir, train=False, transform=transform_val)
         dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, pin_memory=True)
