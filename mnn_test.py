@@ -33,5 +33,6 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--learning_rate', type=float, default=1e-2)
     parser.add_argument('--weight_decay', type=float, default=1e-2)
+    parser.add_argument('--switch_threshold', type=float, default=0.25)
     args = parser.parse_args()
     main(args)

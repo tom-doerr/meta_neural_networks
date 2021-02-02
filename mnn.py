@@ -25,8 +25,12 @@ class CIFAR10_Module(pl.LightningModule):
         self.switch_model = get_classifier(hparams.classifier, pretrained)
 
         def switch_func(x):
-            labels_desc = torch.argsort(x, dim=1, descending=True)
-            return labels_desc[:, :3]  # top-3
+            picked_labels = torch.arange(self.total_classes).view(1, -1).repeat(x.shape[0], 1)
+            picked_labels[x < self.hparams.switch_threshold] = -1  # 0.2 work well
+            return picked_labels  # > 0.1
+        def switch_func2(x):
+            picked_labels = torch.arange(self.total_classes).view(1, -1).repeat(x.shape[0], 1)
+            return picked_labels
         self.switch_func = switch_func
 
         self.total_classes = 10
