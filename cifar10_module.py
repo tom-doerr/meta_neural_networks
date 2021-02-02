@@ -2,6 +2,7 @@ import os
 from argparse import Namespace
 import numpy as np
 import torch
+from torch.nn.functional import sigmoid, softmax
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
@@ -56,7 +57,8 @@ class CIFAR10_Module(pl.LightningModule):
 
             self.mean = dataset.mean
             self.std = dataset.std
-            self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
+            #self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
+            self.criterion = torch.nn.BCELoss()
         else:
             self.criterion = torch.nn.CrossEntropyLoss()
 
@@ -73,11 +75,21 @@ class CIFAR10_Module(pl.LightningModule):
         
     def forward(self, batch):
         images, labels = batch
+        label = (labels == self.hparams.target).float()
         # self.model.eval()  # Debugging: this ensures that BatchNorm2d is NOT updated
+        #breakpoint()
         predictions = self.model(images)
-        loss = self.criterion(predictions, labels)
+        predictions = softmax(predictions, dim=1)
+        prediction = predictions[:, self.hparams.target]  # predictions.shape = (N_samples, 10 logits)
+        loss = self.criterion(prediction, label)
         # loss *= 0  # Debugging: this ensures that parameters are NOT updated
-        accuracy = torch.sum(torch.max(predictions, 1)[1] == labels.data).float() / batch[0].size(0)
+        #breakpoint()
+        prediction = (torch.argmax(predictions, dim=1) == self.hparams.target).long()
+        #accuracy = torch.sum(torch.round(prediction) == label.data).float() / batch[0].size(0)  # if > 0.5 then right
+        accuracy = torch.sum(prediction == label.data).float() / batch[0].size(0)  # if = label then right (it could be lower than 0.5 but still right)
+        # accuracy = torch.sum(predictions == label.data).float() / batch[0].size(0)
+        #accuracy = torch.sum(torch.argmax(predictions) == hparams == label.data).float() / batch[0].size(0)
+        # Specialized NN 0| input = <Image of class 3>; pred = [class 0 = 0.1, class 5 = 0.9]; loss = good 0.1 is close to 0; accuracy = bad
         return loss, accuracy
     
     def training_step(self, batch, batch_nb):
