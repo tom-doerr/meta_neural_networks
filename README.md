@@ -46,3 +46,9 @@ python3 generate_class_labels.py --train --classifier mobilenet_v2
 ./init_classes_weights.sh
 ./train_gpu_classes.sh
 ```
+or just
+```
+./train_classes_from_scratch.sh
+```
+```
+```
