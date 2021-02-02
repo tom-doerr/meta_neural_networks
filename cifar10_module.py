@@ -79,6 +79,11 @@ class CIFAR10_Module(pl.LightningModule):
         # self.model.eval()  # Debugging: this ensures that BatchNorm2d is NOT updated
         #breakpoint()
         predictions = self.model(images)
+        if self.hparams.target < 0:
+            loss = self.criterion(predictions, labels)
+            accuracy = torch.sum(torch.max(predictions, 1)[1] == labels.data).float() / batch[0].size(0)
+            return loss, accuracy
+
         predictions = softmax(predictions, dim=1)
         prediction = predictions[:, self.hparams.target]  # predictions.shape = (N_samples, 10 logits)
         loss = self.criterion(prediction, label)
