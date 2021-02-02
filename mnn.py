@@ -44,15 +44,16 @@ class CIFAR10_Module(pl.LightningModule):
         # self.model.eval()  # Debugging: this ensures that BatchNorm2d is NOT updated
         initial_predictions = self.switch_model(images)
         predictions = initial_predictions.detach().clone()
+        predictions = softmax(predictions)
         switch_indicies = self.switch_func(predictions)
 
         class_model_batches = []
         for i in range(self.total_classes):
-            data_indicies = (switch_indicies - i == 0).sum(dim=1)
+            data_indicies = (switch_indicies - i == 0).sum(dim=1).bool()
             class_model_batches.append((images[data_indicies], labels[data_indicies]))
 
         for i in range(self.total_classes):
-            indicies = (switch_indicies - i == 0).sum(dim=1)
+            indicies = (switch_indicies - i == 0).sum(dim=1).bool()
             # print(class_model_batches[i][0].device)
             # print(images.device)
             # print('*' * 50)
@@ -64,7 +65,7 @@ class CIFAR10_Module(pl.LightningModule):
             target_mask[:, i] = 1
             other_mask = 1 - target_mask
             #breakpoint()
-            pred_vs_other = pred * target_mask + (1 - pred) * other_mask / 9.0
+            pred_vs_other = pred * target_mask + (1 - pred) * other_mask / (self.total_classes - 1)
 
             # p2 = []
             # for img in class_model_batches[i][0]:
