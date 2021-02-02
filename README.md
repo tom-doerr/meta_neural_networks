@@ -64,3 +64,11 @@ To get the accuracy values for different offsets, run:
 ./generate_switch_threshold_accuracy.sh
 ```
 This will write the threshold and corresponding accuracy to `plotting/switch_threshold_accuracy`.
+
+Plot the results (run outside docker):
+```
+python3 plot_csv.py plotting/switch_threshold_accuracy
+```
+
+
+
