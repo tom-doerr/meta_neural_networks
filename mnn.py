@@ -2,6 +2,7 @@ import os
 from argparse import Namespace
 import numpy as np
 import torch
+from torch.nn.functional import softmax
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
@@ -22,6 +23,12 @@ class CIFAR10_Module(pl.LightningModule):
         self.std = [0.2023, 0.1994, 0.2010]
 
         self.switch_model = get_classifier(hparams.classifier, pretrained)
+
+        def switch_func(x):
+            labels_desc = torch.argsort(x, dim=1, descending=True)
+            return labels_desc[:, :3]  # top-3
+        self.switch_func = switch_func
+
         self.total_classes = 10
         self.class_models = []
         for i in range(self.total_classes):
@@ -37,25 +44,34 @@ class CIFAR10_Module(pl.LightningModule):
         # self.model.eval()  # Debugging: this ensures that BatchNorm2d is NOT updated
         initial_predictions = self.switch_model(images)
         predictions = initial_predictions.detach().clone()
-        initial_preds_argmax = torch.max(predictions, 1)[1]
+        switch_indicies = self.switch_func(predictions)
 
         class_model_batches = []
         for i in range(self.total_classes):
-            indexes = initial_preds_argmax == i
-            class_model_batches.append((images[indexes], labels[indexes]))
+            data_indicies = (switch_indicies - i == 0).sum(dim=1)
+            class_model_batches.append((images[data_indicies], labels[data_indicies]))
 
         for i in range(self.total_classes):
-            indexes = initial_preds_argmax == i
+            indicies = (switch_indicies - i == 0).sum(dim=1)
             # print(class_model_batches[i][0].device)
             # print(images.device)
             # print('*' * 50)
-            preds = self.class_models[i](class_model_batches[i][0])
+            logits = self.class_models[i](class_model_batches[i][0])
+            preds = softmax(logits, dim=1)
+            pred = preds[:, i].view(-1, 1)
+
+            target_mask = torch.zeros_like(preds)
+            target_mask[:, i] = 1
+            other_mask = 1 - target_mask
+            #breakpoint()
+            pred_vs_other = pred * target_mask + (1 - pred) * other_mask / 9.0
+
             # p2 = []
             # for img in class_model_batches[i][0]:
             #     p2.append(self.class_models[i](img.view(1, *img.shape)).cpu().numpy())
             # p2 = torch.tensor(p2).squeeze()
             # breakpoint()
-            predictions[indexes] = preds
+            predictions[indicies] *= pred_vs_other
 
         loss = 0
         # loss *= 0  # Debugging: this ensures that parameters are NOT updated
