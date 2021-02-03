@@ -6,7 +6,7 @@ from torch.nn.functional import sigmoid, softmax
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from cifar10_models import *
 from cifar10_dataset import CIFAR10Class
 
@@ -48,34 +48,18 @@ class CIFAR10_Module(pl.LightningModule):
         self.hparams = hparams
 
         if self.hparams.target >= 0:
-            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
-            probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
             self.switch_kwargs = {'switch_threshold': self.hparams.switch_threshold}
             print(self.switch_kwargs)
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)  # not that nice to create dataset here, but we need to count classes to initialize weight for loss
-            print('len(dataset) =', len(dataset))
-            self.classes_count = dataset.classes_count
-            weight_array = np.array(1 / self.classes_count, dtype=np.float32)
-            weight_array[self.hparams.target] *= 9  # score right and wrong predictions the same (consider all classes other than 'target' as wrong)
-            self.cross_entropy_weight = torch.tensor(weight_array)
-
-            self.mean = dataset.mean
-            self.std = dataset.std
-            #self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
             self.criterion = torch.nn.BCELoss()
         else:
             self.criterion = torch.nn.CrossEntropyLoss()
 
-            self.mean = [0.4914, 0.4822, 0.4465]
-            self.std = [0.2023, 0.1994, 0.2010]
 
         if False:  # always use full-dataset mean
             self.mean = [0.4914, 0.4822, 0.4465]
             self.std = [0.2023, 0.1994, 0.2010]
 
         self.model = get_classifier(hparams.classifier, pretrained, target=self.hparams.target)
-        self.train_size = len(self.train_dataloader().dataset)
-        self.val_size = len(self.val_dataloader().dataset)
         
     def forward(self, batch):
         images, labels = batch
@@ -136,32 +120,74 @@ class CIFAR10_Module(pl.LightningModule):
                                                                      epochs=self.hparams.max_epochs),
                      'interval': 'step', 'name': 'learning_rate'}
         return [optimizer], [scheduler]
-    
-    def train_dataloader(self):
-        transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),
-                                              transforms.RandomHorizontalFlip(),
-                                              transforms.ToTensor(),
-                                              transforms.Normalize(self.mean, self.std)])
+
+    def setup(self, stage):
         if self.hparams.target >= 0:
             labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
             probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_train, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
+            dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
+            self.mean = dataset.mean
+            self.std = dataset.std
         else:
-            dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
-        dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
+            self.mean = [0.4914, 0.4822, 0.4465]
+            self.std = [0.2023, 0.1994, 0.2010]
+
+        transform_val = transforms.Compose([transforms.ToTensor(),
+                                            transforms.Normalize(self.mean, self.std)])
+        if stage == 'fit':
+            transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),
+                                                  transforms.RandomHorizontalFlip(),
+                                                  transforms.ToTensor(),
+                                                  transforms.Normalize(self.mean, self.std)])
+            if self.hparams.target >= 0:
+                labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+                probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'train'))
+                dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_train, download=True, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
+                val_dataset = CIFAR10Class(root=self.hparams.data_dir, train=True, transform=transform_val, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
+            else:
+                dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_train, download=True)
+                val_dataset = CIFAR10(root=self.hparams.data_dir, train=True, transform=transform_val)
+
+            full_len = len(dataset)
+            val_len = full_len // 10 + 1
+            train_len = full_len - val_len
+            print('len(dataset) = {}, is split for train, val: {} {}'.format(full_len, train_len, val_len))
+
+            indicies = torch.randperm(full_len, generator=torch.Generator().manual_seed(42))
+            train_indicies, val_indicies = indicies[:train_len], indicies[train_len:]
+
+            self.train_dataset = Subset(dataset, indices=train_indicies)
+            self.val_dataset = Subset(val_dataset, indices=val_indicies)
+
+            self.train_size = train_len
+            self.val_size = val_len
+
+            # Initialize loss function based on the proportion of classes
+            # self.classes_count = dataset.classes_count
+            # weight_array = np.array(1 / self.classes_count, dtype=np.float32)
+            # weight_array[self.hparams.target] *= 9  # score right and wrong predictions the same (consider all classes other than 'target' as wrong)
+            # self.cross_entropy_weight = torch.tensor(weight_array)
+
+            #self.criterion = torch.nn.CrossEntropyLoss(weight=self.cross_entropy_weight)
+        else:
+            if self.hparams.target >= 0:
+                labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
+                probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
+                dataset = CIFAR10Class(root=self.hparams.data_dir, train=False, transform=transform_val, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
+            else:
+                dataset = CIFAR10(root=self.hparams.data_dir, train=False, transform=transform_val)
+            self.test_dataset = dataset
+
+            self.val_size = len(dataset)
+    
+    def train_dataloader(self):
+        dataloader = DataLoader(self.train_dataset, batch_size=self.hparams.batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
     def val_dataloader(self):
-        transform_val = transforms.Compose([transforms.ToTensor(),
-                                            transforms.Normalize(self.mean, self.std)])
-        if self.hparams.target >= 0:
-            labels_file = os.path.join(self.hparams.labels_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
-            probabilities_file = os.path.join(self.hparams.probabilities_dir, '{}_{}.npy'.format(self.hparams.classifier, 'test'))
-            dataset = CIFAR10Class(root=self.hparams.data_dir, train=False, transform=transform_val, labels_file=labels_file, probabilities_file=probabilities_file, target=self.hparams.target, use_switch_func=self.hparams.use_switch_func, switch_kwargs=self.switch_kwargs)
-        else:
-            dataset = CIFAR10(root=self.hparams.data_dir, train=False, transform=transform_val)
-        dataloader = DataLoader(dataset, batch_size=self.hparams.batch_size, num_workers=4, pin_memory=True)
+        dataloader = DataLoader(self.val_dataset, batch_size=self.hparams.batch_size, num_workers=4, pin_memory=True)
         return dataloader
     
     def test_dataloader(self):
-        return self.val_dataloader()
+        dataloader = DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=4, pin_memory=True)
+        return dataloader
