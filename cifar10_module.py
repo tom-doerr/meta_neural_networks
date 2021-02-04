@@ -2,7 +2,7 @@ import os
 from argparse import Namespace
 import numpy as np
 import torch
-from torch.nn.functional import sigmoid, softmax
+from torch.nn.functional import sigmoid, softmax, binary_cross_entropy
 import pytorch_lightning as pl
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
@@ -74,7 +74,10 @@ class CIFAR10_Module(pl.LightningModule):
 
         predictions = softmax(predictions, dim=1)
         prediction = predictions[:, self.hparams.target]  # predictions.shape = (N_samples, 10 logits)
-        loss = self.criterion(prediction, label)
+        weight = torch.ones_like(label)
+        weight[label < 0.5] = 9
+        loss = binary_cross_entropy(prediction, label, weight)
+        # loss = self.criterion(prediction, label)
         # loss *= 0  # Debugging: this ensures that parameters are NOT updated
         #breakpoint()
         prediction = (torch.argmax(predictions, dim=1) == self.hparams.target).long()
