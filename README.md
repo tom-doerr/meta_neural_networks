@@ -1,5 +1,5 @@
 # Meta Neural Networks
-<img align="right" width="100" height="100" src="./meta_neural_network_inference.png">
+<img align="right" width="200" height="200" src="./meta_neural_network_inference.png">
 
 The current generation of neural networks uses all neurons during inference, which is in stark contrast to how the human brain operates.
 The brain only activates the regions of the brain that are relevant for interpreting the current input data, instead of activating all available parts of the brain. This contributes to the high efficiency of the brain. 
