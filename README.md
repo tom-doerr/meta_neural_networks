@@ -39,24 +39,21 @@ python3 generate_class_labels.py --train --classifier mobilenet_v2
 `./test_gpu_classes_print_result.sh`: Print the accuracy of the specialized neural networks.
 
 
+# Traning
+```
+# Train Neural Switch
+./train_gpu.sh
 
-# Training
-```
-./clear_classes_weights.sh
-./init_classes_weights.sh
-./train_gpu_classes.sh
-```
-or just
-```
+# Generate probabilities for the training set
+./gen_probabilities_gpu.sh
+
+# Training specialized networks
 ./train_classes_from_scratch.sh
+
+# Test the whole MNN architecture
+./test_mnn_print_result.sh
 ```
 
-
-
-# Testing whole architecture
-```
-./test_mnn.sh
-```
 
 # Analyzing the expert threshold
 To get the accuracy values for different offsets, run:
