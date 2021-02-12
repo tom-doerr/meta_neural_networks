@@ -1,3 +1,7 @@
+# Meta Neural Networks
+!(meta_neural_network_inference.png)
+
+
 To build the docker image, run:
 ```
 docker build docker -t meta_nn
