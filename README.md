@@ -35,7 +35,7 @@ The following commands need to be executed in the docker environment.
 `./test_gpu_classes_print_result.sh`: Print the accuracy of the specialized neural networks.
 
 
-# Traning
+# Training
 ```
 # Train Neural Switch
 ./train_gpu.sh
