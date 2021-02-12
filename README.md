@@ -33,15 +33,6 @@ python3 ./cifar10_test.py --classifier mobilenet_v2 --data_dir /mounted/data
 
 
 
-# Neural Switch Activations
-To save the activations of the neural switch: 
-```
-source utils.sh
-docker_run "
-pwd;
-python3 generate_class_labels.py --train --classifier mobilenet_v2
-"
-```
 
 
 # Files 
