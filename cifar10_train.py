@@ -47,6 +47,7 @@ if __name__ == '__main__':
     parser.add_argument('--classifier', type=str, default='resnet18')
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
     parser.add_argument('--labels_dir', type=str, default='labels')
+    parser.add_argument('--probabilities_dir', type=str, default='probabilities')
     parser.add_argument('--target', type=int, default=-1)
     parser.add_argument('--pretrained', action='store_true')
     parser.add_argument('--gpus', default='0,') # use None to train on CPU
@@ -54,5 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', type=int, default=100)
     parser.add_argument('--learning_rate', type=float, default=1e-2)
     parser.add_argument('--weight_decay', type=float, default=1e-2)
+    parser.add_argument('--use_switch_func', action='store_true')
+    parser.add_argument('--switch_threshold', type=float, default=0.25)
     args = parser.parse_args()
     main(args)

@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--classifier', type=str, default='resnet18')
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
     parser.add_argument('--labels_dir', type=str, default='labels')
+    parser.add_argument('--probabilities_dir', type=str, default='probabilities')
     parser.add_argument('--target', type=int, default=-1)
     parser.add_argument('--no_gpu', action='store_true')
     parser.add_argument('--gpus', default='0,')

@@ -83,6 +83,7 @@ def save_labels(file_path, labels, probabilities=False):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('--target', type=int, default=-1)
     parser.add_argument('--classifier', type=str, default='resnet18')
     parser.add_argument('--data_dir', type=str, default='/data/huy/cifar10/')
     parser.add_argument('--no_gpu', action='store_true')
