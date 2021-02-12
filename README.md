@@ -5,6 +5,8 @@ The current generation of neural networks uses all neurons during inference, whi
 The brain only activates the regions of the brain that are relevant for interpreting the current input data, instead of activating all available parts of the brain. This contributes to the high efficiency of the brain. 
 To increase efficiency in artificial neural networks, we implement a neural network that consists of multiple smaller neural networks (meta neural network), which more closely resembles the neural networks nature designed. 
 
+[PDF report](report.pdf)
+
 
 To build the docker image, run:
 ```
