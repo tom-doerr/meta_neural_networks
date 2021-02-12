@@ -23,6 +23,7 @@ source utils.sh
 docker_run "
 pwd;
 python3 ./cifar10_test.py --classifier mobilenet_v2 --data_dir /mounted/data
+"
 ```
 The following commands need to be executed in the docker environment.
 
