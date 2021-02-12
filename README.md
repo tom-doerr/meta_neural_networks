@@ -63,4 +63,4 @@ python3 plot_csv.py plotting/switch_threshold_accuracy
 
 
 Contains code from https://github.com/huyvnphan/PyTorch_CIFAR10.
-The meta neural networks described here are not related to the meta neural networks described in the paper ["Meta-neural networks that learn by learning](https://ieeexplore.ieee.org/abstract/document/287172).
+The meta neural networks described here are not related to the meta neural networks described in the paper [Meta-neural networks that learn by learning](https://ieeexplore.ieee.org/abstract/document/287172).
