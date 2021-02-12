@@ -40,7 +40,10 @@ The following commands need to be executed in the docker environment.
 
 # Training specialized networks
 ./train_classes_from_scratch.sh
+```
 
+# Testing
+```
 # Test the whole MNN architecture
 ./test_mnn_print_result.sh
 ```
