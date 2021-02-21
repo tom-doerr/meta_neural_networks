@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 cifar10_test.py --classifier mobilenet_v2 --data_dir dataset --gpus 0,
+python3 imagenet_test.py --batch_size 100 --classifier mobilenet_v2 --data_dir /hdd --gpus 1,

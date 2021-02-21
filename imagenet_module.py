@@ -11,13 +11,20 @@ from torch.utils.data import DataLoader, Subset
 from cifar10_dataset import CIFAR10Class  # TODO(az): change to ImageNetClass when ready
 
 def get_classifier(classifier, pretrained, target=-1):
-    # TODO(az): target is not supported yet
-    assert target < 0, "target is not supported yet"
-
     model_func = getattr(models, classifier)
     if model_func is None:
         raise NameError('Please enter a valid classifier')
-    return model_func(pretrained=pretrained)
+
+    model = model_func()  # do not pass pretrained here, because we have our own loading pipeline
+    device = 'cpu'  # as it was default parameter in cifar10_models/mobilenetv2.py
+    if pretrained:
+        script_dir = os.path.dirname(__file__)
+        if target >= 0:
+            state_dict = torch.load('{}/imagenet_models/state_dicts/{}/{}.pt'.format(script_dir, classifier, target), map_location=device)
+        else:
+            state_dict = torch.load('{}/imagenet_models/state_dicts/{}.pt'.format(script_dir, classifier), map_location=device)
+        model.load_state_dict(state_dict)
+    return model
         
 class ImageNet_Module(pl.LightningModule):
     def __init__(self, hparams, pretrained=False):
@@ -115,7 +122,8 @@ class ImageNet_Module(pl.LightningModule):
                                             transforms.CenterCrop(224),
                                             transforms.ToTensor(),
                                             transforms.Normalize(self.mean, self.std)])
-        transform_test = transforms.Compose([transforms.ToTensor(),
+        transform_test = transforms.Compose([transforms.CenterCrop(224),
+                                             transforms.ToTensor(),
                                              transforms.Normalize(self.mean, self.std)])
         if stage == 'fit':
             transform_train = transforms.Compose([transforms.RandomResizedCrop(224),
